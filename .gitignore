@@ -1,3 +1,9 @@
+# vim temp file
+*.swp
+*.swo
+# spike code to test
+spike/node_modules/
+
 *.class
 
 # Mobile Tools for Java (J2ME)
