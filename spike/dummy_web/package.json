@@ -1,0 +1,9 @@
+{
+  "name": "dummy_web",
+  "version": "0.0.1",
+  "description": "spike code",
+  "dependencies": {
+    "async": "1.4.0",
+    "express": "~4.13.1",
+  }
+}
