@@ -2,7 +2,9 @@
 *.swp
 *.swo
 # spike code to test
-spike/node_modules/
+node_modules/
+.bin/
+
 
 *.class
 
