@@ -4,8 +4,11 @@
 # spike code to test
 node_modules/
 .bin/
+library/
+
 # gradle
 .gradle/
+build/
 
 
 *.class
