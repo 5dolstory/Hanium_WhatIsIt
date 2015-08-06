@@ -5,7 +5,8 @@ app.get('/rss/humor', function(req, res){
     res.sendFile(__dirname + '/public/rss_humor_list.xml');
 });
 app.get('/feed/humor/1', function(req, res){
-    res.sendFile(__dirname + '/public/feed_humor_id.html');
+    //res.sendFile(__dirname + '/public/feed_humor_id.html');
+    res.sendFile(__dirname + '/public/feed_humor_id-26535506.html');
 });
 app.get('/rss/best', function(req, res){
     res.sendFile(__dirname + '/public/rss_humor_list.xml');
