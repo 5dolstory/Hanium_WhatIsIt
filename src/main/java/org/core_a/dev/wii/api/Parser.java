@@ -29,125 +29,107 @@ import org.jsoup.select.Elements;
 
 public class Parser {
     public static void main(String[] args) {
+        // port(4566);
         get("/hello", (req, res) -> "Hello World");
-        get("/test/parse/document", (req, res) -> {
-            Workflow workflow = new Workflow();
-            
-            try {
-                workflow.appendPlainTextProcessor(new SentenceSegmentor(), null);
-                workflow.appendPlainTextProcessor(new InformalSentenceFilter(), null);
+        get("/parse/document", (req, response) -> {//{{{
+            processRuliweb();
+            return "";
+        });//}}}
+        get("/parse/rss", (req, res) -> {//{{{
+            String url = "http://localhost:3001/rss/humor";
+            Document doc = Jsoup.connect(url).get();
 
-                workflow.setMorphAnalyzer(new ChartMorphAnalyzer(), "conf/plugin/MajorPlugin/MorphAnalyzer/ChartMorphAnalyzer.json");
-                workflow.appendMorphemeProcessor(new UnknownProcessor(), null);
+            for( Element item : doc.select("item") )
+            {
+                final String title = item.select("title").first().text();
+                final String author = item.select("author").first().text();
+                final String link = item.select("link").first().nextSibling().toString();
 
-                //workflow.setPosTagger(new HMMTagger(), "conf/plugin/MajorPlugin/PosTagger/HmmPosTagger.json");
-                workflow.setPosTagger(new HMMTagger(), "conf/plugin/MajorPlugin/PosTagger/HmmPosTagger.json");
-                workflow.activateWorkflow(true);
-                
-                String document = "한나눔 형태소 분석기는 KLDP에서 제공하는 공개 소프트웨어 프로젝트 사이트에 등록되어 있다.";
-                
-                workflow.analyze(document);
-                System.out.println(workflow.getResultOfDocument());
-                
-                document = "日時: 2010년 7월 30일 오후 1시\n"
-                    + "場所: Coex Conference Room\n";
-                
-                workflow.analyze(document);
-                System.out.println(workflow.getResultOfDocument());
-                
-                workflow.close();
-                
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-                System.exit(0);
-            } catch (IOException e) {
-                e.printStackTrace();
-                System.exit(0);
-            } catch (Exception e) {
-                e.printStackTrace();
+                System.out.println("----------------------");
+                System.out.print(title);
+                System.out.print(author);
+                System.out.print(link);
+                System.out.println("");
             }
-            
-            workflow.close();  	
+            return "b2";
+        });//}}}
+    }
 
-            return "bye";
-        });
-        get("/test2", (req, res) -> {
-            String word = "무궁화 꽃이 피었습니다.";
-             System.out.println("file.encoding=" + System.getProperty("file.encoding"));
-            System.out.println(word);
-            System.out.println("utf-8 -> euc-kr        : " + new String(word.getBytes("utf-8"), "euc-kr"));
-            System.out.println("utf-8 -> ksc5601       : " + new String(word.getBytes("utf-8"), "ksc5601"));
-            System.out.println("utf-8 -> x-windows-949 : " + new String(word.getBytes("utf-8"), "x-windows-949"));
-            System.out.println("utf-8 -> iso-8859-1    : " + new String(word.getBytes("utf-8"), "iso-8859-1"));
-            System.out.println("iso-8859-1 -> euc-kr        : " + new String(word.getBytes("iso-8859-1"), "euc-kr"));
-            System.out.println("iso-8859-1 -> ksc5601       : " + new String(word.getBytes("iso-8859-1"), "ksc5601"));
-            System.out.println("iso-8859-1 -> x-windows-949 : " + new String(word.getBytes("iso-8859-1"), "x-windows-949"));
-            System.out.println("iso-8859-1 -> utf-8         : " + new String(word.getBytes("iso-8859-1"), "utf-8"));
-            System.out.println("euc-kr -> utf-8         : " + new String(word.getBytes("euc-kr"), "utf-8"));
-            System.out.println("euc-kr -> ksc5601       : " + new String(word.getBytes("euc-kr"), "ksc5601"));
-            System.out.println("euc-kr -> x-windows-949 : " + new String(word.getBytes("euc-kr"), "x-windows-949"));
-            System.out.println("euc-kr -> iso-8859-1    : " + new String(word.getBytes("euc-kr"), "iso-8859-1"));
-            System.out.println("ksc5601 -> euc-kr        : " + new String(word.getBytes("ksc5601"), "euc-kr"));
-            System.out.println("ksc5601 -> utf-8         : " + new String(word.getBytes("ksc5601"), "utf-8"));
-            System.out.println("ksc5601 -> x-windows-949 : " + new String(word.getBytes("ksc5601"), "x-windows-949"));
-            System.out.println("ksc5601 -> iso-8859-1    : " + new String(word.getBytes("ksc5601"), "iso-8859-1"));
-            System.out.println("x-windows-949 -> euc-kr     : " + new String(word.getBytes("x-windows-949"), "euc-kr"));
-            System.out.println("x-windows-949 -> utf-8      : " + new String(word.getBytes("x-windows-949"), "utf-8"));
-            System.out.println("x-windows-949 -> ksc5601    : " + new String(word.getBytes("x-windows-949"), "ksc5601"));
-            System.out.println("x-windows-949 -> iso-8859-1 : " + new String(word.getBytes("x-windows-949"), "iso-8859-1"));
-            return "bye bye";
-        });
+    // get document
+    public static Document getDocument(String url) throws IOException {
+        return Jsoup.connect("http://localhost:3001/feed/humor/1").get();
+    }
 
-        get("/parse/document", (req, response) -> {
-            Workflow workflow = WorkflowFactory.getPredefinedWorkflow(WorkflowFactory.WORKFLOW_NOUN_EXTRACTOR);
-            
-            try {
-//                HtmlFetcher fetcher = new HtmlFetcher();
-//                JResult res = fetcher.fetchAndExtract("http://localhost:3001/feed/humor/1", 10000, true);
-                Document doc = Jsoup.connect("http://localhost:3001/feed/humor/1").get();
-                Elements content = doc.select("#gaiaViewCont");
-                Elements pTag = content.select("p");
+    // to morpheme, parse context
+    public static String parseRuliwebArticle(Document document) {
+        Elements content = document.select("#gaiaViewCont");
+        Elements pTag = content.select("p");
 
-                String contents = "";
-                //print all titles in main page
-                for(Element e: pTag){
-                    System.out.println("text: " +e.text());
-                    //System.out.println("html: "+ e.html());
-                    contents += " " + e.text();
-                }   
+        String contents = "";
+        for(Element e: pTag){
+            // System.out.println("text: " +e.text());
+            contents += " " + e.text();
+        }   
 
+        return contents;
+    }
 
-                /* Activate the work flow in the thread mode */
-                workflow.activateWorkflow(true);
+    public static String parseAgoraArticle(Document document) {
+        return "";
+    }
 
-                /* Analysis using the work flow */
-                String document = contents;
-                workflow.analyze(document);
+    // to morpheme, parse title
+    public static String parseRuliwebTitle(Document document) {
+        return "";
+    }
 
-                LinkedList<Sentence> resultList = workflow.getResultOfDocument(new Sentence(0, 0, false));
-                for (Sentence s : resultList) {
-                    Eojeol[] eojeolArray = s.getEojeols();
-                    for (int i = 0; i < eojeolArray.length; i++) {
-                        if (eojeolArray[i].length > 0) {
-                            String[] morphemes = eojeolArray[i].getMorphemes();
-                            for (int j = 0; j < morphemes.length; j++) {
-                                System.out.print(morphemes[j]);
+    public static String parseAgoraTitle(Document document) {
+        return "";
+    }
+
+    // weight
+
+    // process Ruliweb
+    public static void processRuliweb() {
+        //task id generate
+        Workflow workflow = WorkflowFactory.getPredefinedWorkflow(WorkflowFactory.WORKFLOW_NOUN_EXTRACTOR);
+        try {
+            Document document = getDocument("maybe url");
+            String article = parseRuliwebArticle(document);
+
+            workflow.activateWorkflow(true);
+
+            workflow.analyze(article);
+
+            LinkedList<Sentence> resultList = workflow.getResultOfDocument(new Sentence(0, 0, false));
+            for (Sentence s : resultList) {
+                Eojeol[] eojeolArray = s.getEojeols();
+                for (int i = 0; i < eojeolArray.length; i++) {
+                    if (eojeolArray[i].length > 0) {
+                        String[] morphemes = eojeolArray[i].getMorphemes();
+                        for (int j = 0; j < morphemes.length; j++) {
+                            String tmpMorpheme = morphemes[j];
+                            tmpMorpheme = tmpMorpheme.trim();
+                            tmpMorpheme = tmpMorpheme.replace(" ","");
+                            tmpMorpheme = tmpMorpheme.replace("\u00A0","");
+                            if (tmpMorpheme.length() > 0) {
+                                //System.out.print(tmpMorpheme);
+                                System.out.print(tmpMorpheme.length() + "[" + tmpMorpheme + "]");
+
+                                char ch[] = tmpMorpheme.toCharArray();
+                                System.out.print((int)ch[0]);
                             }
-                            System.out.print(", ");
                         }
+                        System.out.print(", ");
                     }
                 }
-
-                workflow.close();
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.exit(0);
             }
+            workflow.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(0);
+        }
 
-            /* Shutdown the work flow */
-            workflow.close();  	
-            return "bye";
-        });
+        workflow.close();  	
     }
 }
