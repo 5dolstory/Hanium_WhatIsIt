@@ -31,11 +31,12 @@ public class Parser {
     public static void main(String[] args) {
         // port(4566);
         get("/hello", (req, res) -> "Hello World");
-        get("/parse/document", (req, response) -> {//{{{
-            processRuliweb();
+        get("/parse/document", (req, response) -> {
+            //processRuliweb();
+            String a = parseRuliwebTitle( Jsoup.connect("http://localhost:3001/feed/humor/1").get() );
             return "";
-        });//}}}
-        get("/parse/rss", (req, res) -> {//{{{
+        });
+        get("/parse/rss", (req, res) -> {
             String url = "http://localhost:3001/rss/humor";
             Document doc = Jsoup.connect(url).get();
 
@@ -52,7 +53,7 @@ public class Parser {
                 System.out.println("");
             }
             return "b2";
-        });//}}}
+        });
     }
 
     // get document
@@ -67,7 +68,6 @@ public class Parser {
 
         String contents = "";
         for(Element e: pTag){
-            // System.out.println("text: " +e.text());
             contents += " " + e.text();
         }   
 
@@ -80,7 +80,17 @@ public class Parser {
 
     // to morpheme, parse title
     public static String parseRuliwebTitle(Document document) {
-        return "";
+        Elements content = document.select(".tit_user");
+        content.select("span").remove();
+        Elements pTag = content.select("strong");
+
+        String contents = "";
+        for(Element e: pTag){
+            System.out.println(e.text());
+            contents += " " + e.text();
+        }   
+
+        return contents;
     }
 
     public static String parseAgoraTitle(Document document) {
@@ -96,6 +106,7 @@ public class Parser {
         try {
             Document document = getDocument("maybe url");
             String article = parseRuliwebArticle(document);
+            String title = parseRuliwebArticle(document);
 
             workflow.activateWorkflow(true);
 
@@ -113,11 +124,7 @@ public class Parser {
                             tmpMorpheme = tmpMorpheme.replace(" ","");
                             tmpMorpheme = tmpMorpheme.replace("\u00A0","");
                             if (tmpMorpheme.length() > 0) {
-                                //System.out.print(tmpMorpheme);
                                 System.out.print(tmpMorpheme.length() + "[" + tmpMorpheme + "]");
-
-                                char ch[] = tmpMorpheme.toCharArray();
-                                System.out.print((int)ch[0]);
                             }
                         }
                         System.out.print(", ");
@@ -127,9 +134,8 @@ public class Parser {
             workflow.close();
         } catch (Exception e) {
             e.printStackTrace();
-            System.exit(0);
+            //System.exit(0);
         }
-
         workflow.close();  	
     }
 }
