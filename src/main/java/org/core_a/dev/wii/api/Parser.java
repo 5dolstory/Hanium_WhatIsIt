@@ -48,11 +48,13 @@ public class Parser {
                 {
                     final String title = item.select("title").first().text();
                     final String author = item.select("author").first().text();
-                    final String link = item.select("link").first().nextSibling().toString();
+                    final String link = item.select("link").first().text();
 
                     System.out.println("----------------------");
                     System.out.print(title);
+                    System.out.print(", ");
                     System.out.print(author);
+                    System.out.print(", ");
                     System.out.print(link);
                     System.out.println("");
 
@@ -66,7 +68,7 @@ public class Parser {
 
     // get document
     public static Document getDocument(String url) throws IOException {
-        return Jsoup.connect("http://localhost:3001/feed/humor/1").get();
+        return Jsoup.connect(url).get();
     }
 
     // to morpheme, parse context
@@ -112,6 +114,7 @@ public class Parser {
         Workflow workflow = WorkflowFactory.getPredefinedWorkflow(WorkflowFactory.WORKFLOW_NOUN_EXTRACTOR);
         try {
             Document document = getDocument(url);
+            System.out.println("get, " + url);
             String article = parseRuliwebArticle(document);
             String title = parseRuliwebTitle(document);
 
@@ -132,7 +135,8 @@ public class Parser {
                             tmpMorpheme = tmpMorpheme.replace(" ","");
                             tmpMorpheme = tmpMorpheme.replace("\u00A0","");
                             if (tmpMorpheme.length() > 0) {
-                                System.out.print(tmpMorpheme.length() + "[" + tmpMorpheme + "]");
+//                                System.out.print(tmpMorpheme.length() + "[" + tmpMorpheme + "]");
+                                System.out.print(tmpMorpheme);
                             }
                         }
                         System.out.print(", ");
@@ -155,7 +159,7 @@ public class Parser {
                             tmpMorpheme = tmpMorpheme.replace(" ","");
                             tmpMorpheme = tmpMorpheme.replace("\u00A0","");
                             if (tmpMorpheme.length() > 0) {
-                                System.out.print(tmpMorpheme.length() + "[" + tmpMorpheme + "]");
+                                System.out.print(tmpMorpheme);
                             }
                         }
                         System.out.print(", ");
