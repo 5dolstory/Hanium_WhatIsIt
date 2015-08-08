@@ -25,34 +25,42 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class Parser {
     public static void main(String[] args) {
         // port(4566);
-        get("/hello", (req, res) -> "Hello World");
-        get("/parse/document", (req, response) -> {
-            //processRuliweb();
-            String a = parseRuliwebTitle( Jsoup.connect("http://localhost:3001/feed/humor/1").get() );
-            return "";
+        post("/parse/document", (req, response) -> {
+            processRuliweb("some link");
+            return "abc";
         });
-        get("/parse/rss", (req, res) -> {
-            String url = "http://localhost:3001/rss/humor";
-            Document doc = Jsoup.connect(url).get();
+        post("/parse/rss", (req, res) -> {
+            Gson gson = new GsonBuilder().create();
+            Task task = gson.fromJson(req.queryParams("task"), Task.class);
+            // System.out.println(task.toString());
 
-            for( Element item : doc.select("item") )
+            for( String url : task.getUrls() )
             {
-                final String title = item.select("title").first().text();
-                final String author = item.select("author").first().text();
-                final String link = item.select("link").first().nextSibling().toString();
+                Document doc = Jsoup.connect(url).get();
 
-                System.out.println("----------------------");
-                System.out.print(title);
-                System.out.print(author);
-                System.out.print(link);
-                System.out.println("");
+                for( Element item : doc.select("item") )
+                {
+                    final String title = item.select("title").first().text();
+                    final String author = item.select("author").first().text();
+                    final String link = item.select("link").first().nextSibling().toString();
+
+                    System.out.println("----------------------");
+                    System.out.print(title);
+                    System.out.print(author);
+                    System.out.print(link);
+                    System.out.println("");
+
+                    processRuliweb(link);
+                }
             }
-            return "b2";
+
+            return "";
         });
     }
 
@@ -86,7 +94,6 @@ public class Parser {
 
         String contents = "";
         for(Element e: pTag){
-            System.out.println(e.text());
             contents += " " + e.text();
         }   
 
@@ -100,18 +107,19 @@ public class Parser {
     // weight
 
     // process Ruliweb
-    public static void processRuliweb() {
+    public static void processRuliweb(String url) {
         //task id generate
         Workflow workflow = WorkflowFactory.getPredefinedWorkflow(WorkflowFactory.WORKFLOW_NOUN_EXTRACTOR);
         try {
-            Document document = getDocument("maybe url");
+            Document document = getDocument(url);
             String article = parseRuliwebArticle(document);
-            String title = parseRuliwebArticle(document);
+            String title = parseRuliwebTitle(document);
 
             workflow.activateWorkflow(true);
 
             workflow.analyze(article);
 
+            // article
             LinkedList<Sentence> resultList = workflow.getResultOfDocument(new Sentence(0, 0, false));
             for (Sentence s : resultList) {
                 Eojeol[] eojeolArray = s.getEojeols();
@@ -131,6 +139,31 @@ public class Parser {
                     }
                 }
             }
+
+            System.out.println("");
+            // title
+            workflow.analyze(title);
+            resultList = workflow.getResultOfDocument(new Sentence(0, 0, false));
+            for (Sentence s : resultList) {
+                Eojeol[] eojeolArray = s.getEojeols();
+                for (int i = 0; i < eojeolArray.length; i++) {
+                    if (eojeolArray[i].length > 0) {
+                        String[] morphemes = eojeolArray[i].getMorphemes();
+                        for (int j = 0; j < morphemes.length; j++) {
+                            String tmpMorpheme = morphemes[j];
+                            tmpMorpheme = tmpMorpheme.trim();
+                            tmpMorpheme = tmpMorpheme.replace(" ","");
+                            tmpMorpheme = tmpMorpheme.replace("\u00A0","");
+                            if (tmpMorpheme.length() > 0) {
+                                System.out.print(tmpMorpheme.length() + "[" + tmpMorpheme + "]");
+                            }
+                        }
+                        System.out.print(", ");
+                    }
+                }
+            }
+            System.out.print("\t\t ------ " + url);
+
             workflow.close();
         } catch (Exception e) {
             e.printStackTrace();
