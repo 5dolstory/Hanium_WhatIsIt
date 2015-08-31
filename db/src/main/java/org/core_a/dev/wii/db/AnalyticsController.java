@@ -22,7 +22,7 @@ public class AnalyticsController {
     private static final String template = "Hello, %s!";
     private final AtomicLong counter = new AtomicLong();
 
-    @RequestMapping("/article/import")
+    @RequestMapping("/article/import", method = RequestMethod.POST)
     public Article article(@RequestParam(value="name", defaultValue="World") String name) {
         return new Article();
     }
