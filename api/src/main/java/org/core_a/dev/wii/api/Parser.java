@@ -3,6 +3,8 @@ package org.core_a.dev.wii.api;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.ArrayList;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -42,14 +44,9 @@ public class Parser {
     public static void main(String[] args) {
         port(3002);
 
-        post("/parse/document", (req, response) -> {
-            processRuliweb("some link");
-            return "abc";
-        });
         post("/parse/rss", (req, res) -> {
             Gson gson = new GsonBuilder().create();
             Task task = gson.fromJson(req.queryParams("task"), Task.class);
-            // System.out.println(task.toString());
 
             for( String url : task.getUrls() )
             {
@@ -60,16 +57,20 @@ public class Parser {
                     final String title = item.select("title").first().text();
                     final String author = item.select("author").first().text();
                     final String link = item.select("link").first().text();
+                    Row parsedRow = new Row(title, author, link);
 
                     System.out.println("----------------------");
-                    System.out.print(title);
-                    System.out.print(", ");
-                    System.out.print(author);
-                    System.out.print(", ");
-                    System.out.print(link);
+                    System.out.println("title\t" + title);
+                    System.out.println("author\t" + author);
+                    System.out.println("link\t" + link);
                     System.out.println("");
 
-                    processRuliweb(link);
+                    Morpheme morpheme = processRuliweb(link);
+                    parsedRow.setMorpheme(morpheme);
+
+                    System.out.println("class\t" + parsedRow);
+                    System.out.println("");
+                    System.out.println("");
                 }
             }
 
@@ -120,7 +121,11 @@ public class Parser {
     // weight
 
     // process Ruliweb
-    public static void processRuliweb(String url) {
+    public static Morpheme processRuliweb(String url) {
+        Morpheme morpheme = new Morpheme(); 
+        List<String> titleList = new ArrayList<String>();
+        List<String> articleList = new ArrayList<String>();
+        //
         //task id generate
         Workflow workflow = WorkflowFactory.getPredefinedWorkflow(WorkflowFactory.WORKFLOW_NOUN_EXTRACTOR);
         try {
@@ -128,13 +133,11 @@ public class Parser {
             System.out.println("get, " + url);
             String article = parseRuliwebArticle(document);
             String title = parseRuliwebTitle(document);
-//            System.out.println("document, " + document);
-//            System.out.println("title, " + title);
-//            System.out.println("article, " + article);
 
             workflow.activateWorkflow(true);
 
             workflow.analyze(article);
+
 
             // article
             LinkedList<Sentence> resultList = workflow.getResultOfDocument(new Sentence(0, 0, false));
@@ -151,6 +154,7 @@ public class Parser {
                             if (tmpMorpheme.length() > 0) {
 //                                System.out.print(tmpMorpheme.length() + "[" + tmpMorpheme + "]");
                                 System.out.print(tmpMorpheme);
+                                articleList.add(tmpMorpheme);
                             }
                         }
                         System.out.print(", ");
@@ -159,6 +163,7 @@ public class Parser {
             }
 
             System.out.println("");
+
             // title
             workflow.analyze(title);
             resultList = workflow.getResultOfDocument(new Sentence(0, 0, false));
@@ -174,6 +179,7 @@ public class Parser {
                             tmpMorpheme = tmpMorpheme.replace("\u00A0","");
                             if (tmpMorpheme.length() > 0) {
                                 System.out.print(tmpMorpheme);
+                                titleList.add(tmpMorpheme);
                             }
                         }
                         System.out.print(", ");
@@ -188,6 +194,10 @@ public class Parser {
             //System.exit(0);
         }
         workflow.close();  	
+        morpheme.setTitle(titleList);
+        morpheme.setContent(articleList);
+
+        return morpheme;
     }
 
     private void sendPost(String param) throws Exception {
