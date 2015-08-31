@@ -10,8 +10,7 @@ public class Article {
         this.title = "hello";
     }
 
-    @Override
-    public String toString() {
-        return "";
+    public String getTitle() {
+        return title;
     }
 }
