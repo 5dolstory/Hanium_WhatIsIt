@@ -4,13 +4,11 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class Article {
-    private String article_no;
-    private String author;
-    private String title;
-    private String context;
-    private List<String> morpheme_title;
-    private List<String> morpheme_context;
-    private String create_at;
+    private final String title;
+
+    public Article() {
+        this.title = "hello";
+    }
 
     @Override
     public String toString() {
