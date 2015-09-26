@@ -11,8 +11,10 @@ import java.io.DataOutputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-
-import javax.net.ssl.HttpsURLConnection;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.net.HttpURLConnection;
+import java.net.URLEncoder;
 
 import static spark.Spark.*;
 import kr.ac.kaist.swrc.jhannanum.comm.Eojeol;
@@ -39,14 +41,14 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 public class Parser {
-    private final String USER_AGENT = "wii/1.0";
-
     public static void main(String[] args) {
         port(3002);
 
         post("/parse/rss", (req, res) -> {
-            Gson gson = new GsonBuilder().create();
+            Gson gson = new GsonBuilder().disableHtmlEscaping().create();
             Task task = gson.fromJson(req.queryParams("task"), Task.class);
+            Pattern pattern = Pattern.compile("articleId=(\\d+)");
+
 
             for( String url : task.getUrls() )
             {
@@ -57,20 +59,23 @@ public class Parser {
                     final String title = item.select("title").first().text();
                     final String author = item.select("author").first().text();
                     final String link = item.select("link").first().text();
+                    Matcher matcher = pattern.matcher(link);
+                    String no = "";
+                    while(matcher.find()) {
+                        no = matcher.group(1);
+                    }
+
                     Row parsedRow = new Row(title, author, link);
 
-                    System.out.println("----------------------");
-                    System.out.println("title\t" + title);
-                    System.out.println("author\t" + author);
-                    System.out.println("link\t" + link);
-                    System.out.println("");
 
                     Morpheme morpheme = processRuliweb(link);
+                    parsedRow.setNo(no);
                     parsedRow.setMorpheme(morpheme);
 
-                    System.out.println("class\t" + parsedRow);
+//                    System.out.println("class\t" + parsedRow);
+                    //System.out.println("\njson string\t" + gson.toJson(parsedRow));
                     System.out.println("");
-                    System.out.println("");
+                    sendPost(gson.toJson(parsedRow));
                 }
             }
 
@@ -130,7 +135,7 @@ public class Parser {
         Workflow workflow = WorkflowFactory.getPredefinedWorkflow(WorkflowFactory.WORKFLOW_NOUN_EXTRACTOR);
         try {
             Document document = getDocument(url);
-            System.out.println("get, " + url);
+//            System.out.println("get, " + url);
             String article = parseRuliwebArticle(document);
             String title = parseRuliwebTitle(document);
 
@@ -153,16 +158,15 @@ public class Parser {
                             tmpMorpheme = tmpMorpheme.replace("\u00A0","");
                             if (tmpMorpheme.length() > 0) {
 //                                System.out.print(tmpMorpheme.length() + "[" + tmpMorpheme + "]");
-                                System.out.print(tmpMorpheme);
+//                                System.out.print(tmpMorpheme);
                                 articleList.add(tmpMorpheme);
                             }
                         }
-                        System.out.print(", ");
+//                        System.out.print(", ");
                     }
                 }
             }
 
-            System.out.println("");
 
             // title
             workflow.analyze(title);
@@ -178,15 +182,15 @@ public class Parser {
                             tmpMorpheme = tmpMorpheme.replace(" ","");
                             tmpMorpheme = tmpMorpheme.replace("\u00A0","");
                             if (tmpMorpheme.length() > 0) {
-                                System.out.print(tmpMorpheme);
+//                                System.out.print(tmpMorpheme);
                                 titleList.add(tmpMorpheme);
                             }
                         }
-                        System.out.print(", ");
+//                        System.out.print(", ");
                     }
                 }
             }
-            System.out.print("\t\t ------ " + url);
+//            System.out.print("\t\t ------ " + url);
 
             workflow.close();
         } catch (Exception e) {
@@ -200,11 +204,13 @@ public class Parser {
         return morpheme;
     }
 
-    private void sendPost(String param) throws Exception {
-
-        String url = "http://172.16.2.11:8080/article/import";
+    private static void sendPost(String param) throws Exception {
+        param = "json=" + URLEncoder.encode(param, "UTF-8");
+        String USER_AGENT = "wii/1.0";
+        String url = "http://localhost:8080/article/import";
+//        String url = "http://localhost:3001/test";
         URL obj = new URL(url);
-        HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
         //add reuqest header
         con.setRequestMethod("POST");
