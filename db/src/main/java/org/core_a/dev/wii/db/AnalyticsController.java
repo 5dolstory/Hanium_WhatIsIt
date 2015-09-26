@@ -22,8 +22,14 @@ public class AnalyticsController {
     private static final String template = "Hello, %s!";
     private final AtomicLong counter = new AtomicLong();
 
-    @RequestMapping("/article/import", method = RequestMethod.POST)
-    public Article article(@RequestParam(value="name", defaultValue="World") String name) {
-        return new Article();
+//    @RequestMapping("/article/import")
+//    public Article article(@RequestParam(value="json", defaultValue="World") String json) {
+//        return new Article(json);
+//    }
+    @RequestMapping("/article/import")
+    public Row row(@RequestParam(value="json") String json) {
+        Gson gson = new GsonBuilder().create();
+        Row row = gson.fromJson(json, Row.class);
+        return row;
     }
 }
