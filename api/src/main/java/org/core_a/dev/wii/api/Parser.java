@@ -41,6 +41,18 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 public class Parser {
+    public static class ParseResult {
+        private String Content;
+        private Morpheme Morpheme;
+
+        public String getContent() { return Content; }
+        public void setContent(String Content) { this.Content = Content; }
+        public Morpheme getMorpheme() { return Morpheme; }
+        public void setMorpheme(Morpheme Morpheme) { this.Morpheme = Morpheme; }
+
+    }
+
+
     public static void main(String[] args) {
         port(3002);
 
@@ -68,9 +80,10 @@ public class Parser {
                     Row parsedRow = new Row(title, author, link);
 
 
-                    Morpheme morpheme = processRuliweb(link);
+                    ParseResult parseResult = processRuliweb(link);
                     parsedRow.setNo(no);
-                    parsedRow.setMorpheme(morpheme);
+                    parsedRow.setMorpheme(parseResult.getMorpheme());
+                    parsedRow.setContent(parseResult.getContent());
 
 //                    System.out.println("class\t" + parsedRow);
                     //System.out.println("\njson string\t" + gson.toJson(parsedRow));
@@ -126,7 +139,8 @@ public class Parser {
     // weight
 
     // process Ruliweb
-    public static Morpheme processRuliweb(String url) {
+    public static ParseResult processRuliweb(String url) {
+        ParseResult parseResult = new ParseResult();
         Morpheme morpheme = new Morpheme(); 
         List<String> titleList = new ArrayList<String>();
         List<String> articleList = new ArrayList<String>();
@@ -138,11 +152,11 @@ public class Parser {
 //            System.out.println("get, " + url);
             String article = parseRuliwebArticle(document);
             String title = parseRuliwebTitle(document);
+            parseResult.setContent(article);
 
             workflow.activateWorkflow(true);
 
             workflow.analyze(article);
-
 
             // article
             LinkedList<Sentence> resultList = workflow.getResultOfDocument(new Sentence(0, 0, false));
@@ -201,7 +215,8 @@ public class Parser {
         morpheme.setTitle(titleList);
         morpheme.setContent(articleList);
 
-        return morpheme;
+        parseResult.setMorpheme(morpheme);
+        return parseResult;
     }
 
     private static void sendPost(String param) throws Exception {
