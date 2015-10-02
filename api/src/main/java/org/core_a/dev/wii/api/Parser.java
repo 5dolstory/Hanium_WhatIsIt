@@ -6,6 +6,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ArrayList;
 
+import java.util.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.InputStreamReader;
@@ -44,11 +48,14 @@ public class Parser {
     public static class ParseResult {
         private String Content;
         private Morpheme Morpheme;
+        private String WriteAt;
 
         public String getContent() { return Content; }
         public void setContent(String Content) { this.Content = Content; }
         public Morpheme getMorpheme() { return Morpheme; }
         public void setMorpheme(Morpheme Morpheme) { this.Morpheme = Morpheme; }
+        public String getWriteAt() { return WriteAt; }
+        public void setWriteAt(String WriteAt) { this.WriteAt = WriteAt; }
 
     }
 
@@ -84,11 +91,11 @@ public class Parser {
                     parsedRow.setNo(no);
                     parsedRow.setMorpheme(parseResult.getMorpheme());
                     parsedRow.setContent(parseResult.getContent());
+                    parsedRow.setWriteAt(parseResult.getWriteAt());
 
-//                    System.out.println("class\t" + parsedRow);
-                    //System.out.println("\njson string\t" + gson.toJson(parsedRow));
+                    System.out.println("\njson string\t" + gson.toJson(parsedRow));
                     System.out.println("");
-                    sendPost(gson.toJson(parsedRow));
+                    //sendPost(gson.toJson(parsedRow));
                 }
             }
 
@@ -136,6 +143,22 @@ public class Parser {
         return "";
     }
 
+    // to parse date
+    public static String parseRuliwebDate(Document document) {
+        Elements content = document.select("ul.list_report");
+        content.select(".tit").remove();
+        Elements pTag = content.select("li.time");
+
+        String contents = "";
+        for(Element e: pTag){
+            contents += e.text();
+        }   
+
+        return contents;
+    }
+    public static String parseAgoraDate(Document document) {
+        return "";
+    }
     // weight
 
     // process Ruliweb
@@ -144,15 +167,22 @@ public class Parser {
         Morpheme morpheme = new Morpheme(); 
         List<String> titleList = new ArrayList<String>();
         List<String> articleList = new ArrayList<String>();
-        //
-        //task id generate
+
+        // TODO task id generate
         Workflow workflow = WorkflowFactory.getPredefinedWorkflow(WorkflowFactory.WORKFLOW_NOUN_EXTRACTOR);
         try {
             Document document = getDocument(url);
-//            System.out.println("get, " + url);
             String article = parseRuliwebArticle(document);
             String title = parseRuliwebTitle(document);
+
+            String tmpWriteAt = parseRuliwebDate(document);
+            SimpleDateFormat transFormat = new SimpleDateFormat("yyyy.MM.dd (HH:mm:ss)");
+            Date writeAtDate = transFormat.parse(tmpWriteAt);
+            DateFormat transFormatToPost = new SimpleDateFormat("yyyyMMdd HHmmss");
+            String writeAt = transFormatToPost.format(writeAtDate);
+
             parseResult.setContent(article);
+            parseResult.setWriteAt(writeAt);
 
             workflow.activateWorkflow(true);
 
@@ -171,16 +201,12 @@ public class Parser {
                             tmpMorpheme = tmpMorpheme.replace(" ","");
                             tmpMorpheme = tmpMorpheme.replace("\u00A0","");
                             if (tmpMorpheme.length() > 0) {
-//                                System.out.print(tmpMorpheme.length() + "[" + tmpMorpheme + "]");
-//                                System.out.print(tmpMorpheme);
                                 articleList.add(tmpMorpheme);
                             }
                         }
-//                        System.out.print(", ");
                     }
                 }
             }
-
 
             // title
             workflow.analyze(title);
@@ -196,20 +222,16 @@ public class Parser {
                             tmpMorpheme = tmpMorpheme.replace(" ","");
                             tmpMorpheme = tmpMorpheme.replace("\u00A0","");
                             if (tmpMorpheme.length() > 0) {
-//                                System.out.print(tmpMorpheme);
                                 titleList.add(tmpMorpheme);
                             }
                         }
-//                        System.out.print(", ");
                     }
                 }
             }
-//            System.out.print("\t\t ------ " + url);
 
             workflow.close();
         } catch (Exception e) {
             e.printStackTrace();
-            //System.exit(0);
         }
         workflow.close();  	
         morpheme.setTitle(titleList);
@@ -230,10 +252,7 @@ public class Parser {
         //add reuqest header
         con.setRequestMethod("POST");
         con.setRequestProperty("User-Agent", USER_AGENT);
-        //con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
 
-        //String urlParameters = "sn=C02G8416DRJM&cn=&locale=&caller=&num=12345";
-        
         // Send post request
         con.setDoOutput(true);
         DataOutputStream wr = new DataOutputStream(con.getOutputStream());

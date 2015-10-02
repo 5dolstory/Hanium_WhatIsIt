@@ -7,6 +7,7 @@ public class Row {
     private String No;
     private String Url;
     private Morpheme Morpheme;
+    private String WriteAt;
 
     public Row(String Title, String Author, String Url) {
         this.Title = Title;
@@ -26,6 +27,8 @@ public class Row {
     public void setUrl(String Url) { this.Url = Url; }
     public Morpheme getMorpheme() { return Morpheme; }
     public void setMorpheme(Morpheme Morpheme) { this.Morpheme = Morpheme; }
+    public String getWriteAt() { return WriteAt; }
+    public void setWriteAt(String WriteAt) { this.WriteAt = WriteAt; }
 
     @Override
     public String toString() {
