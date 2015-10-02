@@ -88,6 +88,7 @@ public class Parser {
 
 
                     ParseResult parseResult = processRuliweb(link);
+                    parsedRow.setProject(task.getProjectName());
                     parsedRow.setNo(no);
                     parsedRow.setMorpheme(parseResult.getMorpheme());
                     parsedRow.setContent(parseResult.getContent());

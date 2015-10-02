@@ -4,15 +4,17 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class Task {
-    private String task_no;
-    private List<String> url = new ArrayList<String>();
+    private String ProjectName;
+    private List<String> Url = new ArrayList<String>();
 
+    public String getProjectName() { return ProjectName; }
+    public void setProjectName(String ProjectName) { this.ProjectName = ProjectName; }
     public List<String> getUrls() {
-        return url;
+        return Url;
     }
 
     @Override
     public String toString() {
-        return task_no + " - " + String.join(", ", url);
+        return ProjectName + " - " + String.join(", ", Url);
     }
 }

@@ -1,6 +1,7 @@
 package org.core_a.dev.wii.api;
 
 public class Row {
+    private String Project;
     private String Title;
     private String Content;
     private String Author;
@@ -15,6 +16,8 @@ public class Row {
         this.Url = Url;
     }
 
+    public String getProject() { return Project; }
+    public void setProject(String Project) { this.Project = Project; }
     public String getTitle() { return Title; }
     public void setTitle(String Title) { this.Title = Title; }
     public String getContent() { return Content; }
