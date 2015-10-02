@@ -10,6 +10,8 @@ public class Row {
     private Morpheme Morpheme;
     private String WriteAt;
 
+    public Row() {
+    }
     public Row(String Title, String Author, String Url) {
         this.Title = Title;
         this.Author = Author;
