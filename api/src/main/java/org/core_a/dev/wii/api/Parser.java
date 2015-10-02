@@ -94,9 +94,9 @@ public class Parser {
                     parsedRow.setContent(parseResult.getContent());
                     parsedRow.setWriteAt(parseResult.getWriteAt());
 
-                    System.out.println("\njson string\t" + gson.toJson(parsedRow));
-                    System.out.println("");
-                    //sendPost(gson.toJson(parsedRow));
+//                    System.out.println("\njson string\t" + gson.toJson(parsedRow));
+//                    System.out.println("");
+                    sendPost(gson.toJson(parsedRow));
                 }
             }
 
