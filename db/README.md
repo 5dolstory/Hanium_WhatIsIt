@@ -8,7 +8,7 @@
 gradle clean; ./gradlew build
 
 # run
-java -Dfile.encoding=UTF-8 -Djava.security.egd=file:/dev/./urandom -jar build/libs/gs-rest-service-0.1.0.jar
+java -Dfile.encoding=UTF-8 -Dserver.port=8080 -Djava.security.egd=file:/dev/./urandom -jar build/libs/gs-rest-service-0.1.0.jar
 ```
 
 
