@@ -18,6 +18,7 @@ import org.apache.log4j.BasicConfigurator;
 import java.sql.SQLException;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.DriverManager;
 
@@ -32,11 +33,57 @@ public class AnalyticsController {
     public Row row(@RequestParam(value="json") String json) {
         Gson gson = new GsonBuilder().create();
         Row row = gson.fromJson(json, Row.class);
-        hiveMethod();
+        //System.out.println(row.toString());
+        //hiveMethod();
+        hiveMethod(row);
         return row;
     }
 
-    public static void hiveMethod() {
+    public static void hiveMethodDummy(Row row) {
+        String query = "INSERT INTO article PARTITION (datestamp = \"" + row.getWriteAtDateOnly() + "\") SELECT ";
+        query += "(\"" + row.getProject() + "\"), ";
+        query += "(\"" + row.getTitle() + "\"), ";
+        query += "(\"" + row.getContent() + "\"), ";
+        query += "(\"" + row.getAuthor() + "\"), ";
+        query += "(\"" + row.getNo() + "\"), ";
+        query += "(\"" + row.getUrl() + "\"), ";
+        query += "Array(" + row.getMorphemeTitle() + "), ";
+        query += "Array(" + row.getMorphemeContent() + "), ";
+        query += "(\"" + row.getWriteAt() + "\"), ";
+        query += " FROM dummy LIMIT 1;";
+
+//        System.out.println(row.getTitle());
+//        System.out.println(row.getContent());
+//        System.out.println(row.getUrl());
+        System.out.println(query);
+    }
+
+    public static void hiveMethod(Row row) {
+//        String query = "INSERT INTO article PARTITION (datestamp = ?) SELECT ";
+//        query += "(?), "; // project
+//        query += "(?), "; // title
+//        query += "(?), "; // content
+//        query += "(?), "; // author
+//        query += "(?), "; // no
+//        query += "(?), "; // url
+//        query += "Array(?), "; // morpheme title
+//        query += "Array(?), "; // morpheme content
+//        query += "(?) "; // write at
+//        query += " FROM dummy LIMIT 1";
+
+        String query = "INSERT INTO article PARTITION (datestamp = \"" + row.getWriteAtDateOnly() + "\") SELECT ";
+        query += "(\"" + row.getProject() + "\"), ";
+        query += "(\"" + row.getTitle() + "\"), ";
+        query += "(\"" + row.getContent() + "\"), ";
+        query += "(\"" + row.getAuthor() + "\"), ";
+        query += "(\"" + row.getNo() + "\"), ";
+        query += "(\"" + row.getUrl() + "\"), ";
+        query += "Array(" + row.getMorphemeTitle() + "), ";
+        query += "Array(" + row.getMorphemeContent() + "), ";
+        query += "(\"" + row.getWriteAt() + "\") ";
+        query += " FROM dummy LIMIT 1";
+        System.out.println(row.getTitle());
+
         try {
             try {
                 Class.forName(driverName);
@@ -45,52 +92,23 @@ public class AnalyticsController {
                 e.printStackTrace();
                 //System.exit(1);
             }
-            //replace "hive" here with the name of the user the queries should run as
-            Connection con = DriverManager.getConnection("jdbc:hive2://localhost:10000/default", "hive", "");
+            Connection con = DriverManager.getConnection("jdbc:hive2://localhost:10000/default", "fishz", "");
+//            PreparedStatement psmt = con.prepareStatement(query);
+//            psmt.setString(1, row.getProject());
+//            psmt.setString(2, row.getTitle());
+//            psmt.setString(3, row.getContent());
+//            psmt.setString(4, row.getAuthor());
+//            psmt.setString(5, row.getNo());
+//            psmt.setString(6, row.getUrl());
+//            psmt.setString(7, row.getMorphemeTitle());
+//            psmt.setString(8, row.getMorphemeContent());
+//            psmt.setString(9, row.getWriteAt());
+//            psmt.executeUpdate();
+
             Statement stmt = con.createStatement();
-            String tableName = "article";
-            //stmt.execute("drop table if exists " + tableName);
-            //stmt.execute("create table " + tableName + " (key int, value string)");
-            // show tables
-            String sql = "show tables '" + tableName + "'";
-            System.out.println("Running: " + sql);
-            ResultSet res = stmt.executeQuery(sql);
-            if (res.next()) {
-                System.out.println(res.getString(1));
-            }
-            // describe table
-            sql = "describe " + tableName;
-            System.out.println("Running: " + sql);
-            res = stmt.executeQuery(sql);
-            while (res.next()) {
-                System.out.println(res.getString(1) + "\t" + res.getString(2));
-            }
 
-    /*
-            // load data into table
-            // NOTE: filepath has to be local to the hive server
-            // NOTE: /tmp/a.txt is a ctrl-A separated file with two fields per line
-            String filepath = "/tmp/a.txt";
-            sql = "load data local inpath '" + filepath + "' into table " + tableName;
-            System.out.println("Running: " + sql);
-            stmt.execute(sql);
+            stmt.executeUpdate(query);
 
-            // select * query
-            sql = "select * from " + tableName;
-            System.out.println("Running: " + sql);
-            res = stmt.executeQuery(sql);
-            while (res.next()) {
-                System.out.println(String.valueOf(res.getInt(1)) + "\t" + res.getString(2));
-            }
-
-            // regular hive query
-            sql = "select count(1) from " + tableName;
-            System.out.println("Running: " + sql);
-            res = stmt.executeQuery(sql);
-            while (res.next()) {
-                System.out.println(res.getString(1));
-            }
-    */
         } catch (SQLException e) {
             e.printStackTrace();
         }
