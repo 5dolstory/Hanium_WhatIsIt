@@ -72,26 +72,27 @@ public class AnalyticsController {
             while (res.next()) {
                 amount = res.getInt(1);
             }
-            amount = 1;
             if (amount > 0) {
                 res = stmt.executeQuery(keywordQuery);
 
-//                int flag = 0;
-//                while (res.next()) {
-//                    if (flag == 0) {
-//                        flag = 1;
-//                    } else {
-//                        summaryQuery += " UNION ";
-//                    }
-//                    //System.out.println(String.valueOf(res.getString(1)));
-//                    summaryQuery += "SELECT '" + res.getString(1) + "' AS keyword, collect_set(no) AS noes FROM article WHERE array_contains(morpheme_title, '" + res.getString(1) + "') OR array_contains(morpheme_content, '" + res.getString(1) + "') ";
-//                }
+                int flag = 0;
+                while (res.next()) {
+                    if (flag == 0) {
+                        flag = 1;
+                    } else {
+                        summaryQuery += " UNION ";
+                    }
+                    //System.out.println(String.valueOf(res.getString(1)));
+                    summaryQuery += "SELECT '" + res.getString(1) + "' AS keyword, collect_set(no) AS noes FROM article WHERE array_contains(morpheme_title, '" + res.getString(1) + "') OR array_contains(morpheme_content, '" + res.getString(1) + "') ";
+                }
 
                 // TEST
-                summaryQuery = "select \"ost\", concat_ws(', ', collect_set(no)) from article where array_contains(morpheme_content, \"ost\")";
-                summaryQuery += " union select \"내년\", concat_ws(', ', collect_set(no)) from article where array_contains(morpheme_content, \"내년\")";
+//                summaryQuery = "select \"ost\", concat_ws(', ', collect_set(no)) from article where array_contains(morpheme_content, \"ost\")";
+//                summaryQuery += " union select \"내년\", concat_ws(', ', collect_set(no)) from article where array_contains(morpheme_content, \"내년\")";
+//
+//                res = stmt.executeQuery(summaryQuery);
+                // TEST
 
-                res = stmt.executeQuery(summaryQuery);
                 String keywords = "";
                 while (res.next()) {
                     System.out.println(String.valueOf(res.getString(1)) + "\t" +String.valueOf(res.getString(2)));
@@ -100,7 +101,6 @@ public class AnalyticsController {
                 keywords = keywords.substring(0, keywords.length() -1);
 
                 reportQuery += amount + ", '" + keywords + "')";
-                // TEST
             } else {
                 reportQuery += "0, null)";
             }
@@ -108,8 +108,6 @@ public class AnalyticsController {
             Connection conMysql = DriverManager.getConnection("jdbc:mysql://localhost:3306/wii", "root", "root");
 
             Statement stmtMysql = conMysql.createStatement();
-System.out.println("---------------- hello world");
-System.out.println(reportQuery);
             stmtMysql.executeUpdate(reportQuery);
 
 
