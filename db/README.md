@@ -5,11 +5,10 @@
 
 ```bash
 # build
-gradle clean
-gradle uberjar
+gradle clean; ./gradlew build
 
 # run
-java -Dfile.encoding=UTF-8 -jar build/libs/Analytics-1.0-SNAPSHOT.jar 
+java -Dfile.encoding=UTF-8 -Djava.security.egd=file:/dev/./urandom -jar build/libs/gs-rest-service-0.1.0.jar
 ```
 
 

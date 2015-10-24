@@ -5,8 +5,7 @@
 
 ```bash
 # build
-gradle clean
-gradle uberjar
+gradle clean; gradle uberjar
 
 # run
 java -Dfile.encoding=UTF-8 -jar build/libs/Parser-1.0-SNAPSHOT.jar 
