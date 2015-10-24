@@ -30,9 +30,14 @@ public class Row {
     public void setNo(String No) { this.No = No; }
     public String getUrl() { return Url; }
     public void setUrl(String Url) { this.Url = Url; }
+
     public Morpheme getMorpheme() { return Morpheme; }
+    public String getMorphemeTitle() { return "\"" + String.join("\", \"", Morpheme.getTitle()) + "\""; }
+    public String getMorphemeContent() { return "\"" + String.join("\", \"", Morpheme.getContent()) + "\""; }
     public void setMorpheme(Morpheme Morpheme) { this.Morpheme = Morpheme; }
+
     public String getWriteAt() { return WriteAt; }
+    public String getWriteAtDateOnly() { return WriteAt.substring(0, 10); }
     public void setWriteAt(String WriteAt) { this.WriteAt = WriteAt; }
 
     @Override

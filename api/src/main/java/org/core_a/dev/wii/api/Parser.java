@@ -179,7 +179,7 @@ public class Parser {
             String tmpWriteAt = parseRuliwebDate(document);
             SimpleDateFormat transFormat = new SimpleDateFormat("yyyy.MM.dd (HH:mm:ss)");
             Date writeAtDate = transFormat.parse(tmpWriteAt);
-            DateFormat transFormatToPost = new SimpleDateFormat("yyyyMMdd HHmmss");
+            DateFormat transFormatToPost = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             String writeAt = transFormatToPost.format(writeAtDate);
 
             parseResult.setContent(article);
