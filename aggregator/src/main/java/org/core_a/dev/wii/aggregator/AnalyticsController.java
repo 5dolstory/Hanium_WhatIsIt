@@ -67,6 +67,7 @@ public class AnalyticsController {
             Statement stmt = con.createStatement();
 
             ResultSet res = null;
+            System.out.println(amountQuery);
             res = stmt.executeQuery(amountQuery);
             int amount = -1;
             while (res.next()) {
@@ -83,16 +84,17 @@ public class AnalyticsController {
                         summaryQuery += " UNION ";
                     }
                     //System.out.println(String.valueOf(res.getString(1)));
-                    summaryQuery += "SELECT '" + res.getString(1) + "' AS keyword, collect_set(no) AS noes FROM article WHERE array_contains(morpheme_title, '" + res.getString(1) + "') OR array_contains(morpheme_content, '" + res.getString(1) + "') ";
+                    summaryQuery += "SELECT '" + res.getString(1) + "' AS keyword, concat_ws(', ', collect_set(no)) AS noes FROM article WHERE array_contains(morpheme_title, '" + res.getString(1) + "') OR array_contains(morpheme_content, '" + res.getString(1) + "') ";
                 }
 
                 // TEST
 //                summaryQuery = "select \"ost\", concat_ws(', ', collect_set(no)) from article where array_contains(morpheme_content, \"ost\")";
 //                summaryQuery += " union select \"내년\", concat_ws(', ', collect_set(no)) from article where array_contains(morpheme_content, \"내년\")";
 //
-//                res = stmt.executeQuery(summaryQuery);
                 // TEST
 
+                res = stmt.executeQuery(summaryQuery);
+                System.out.println(summaryQuery);
                 String keywords = "";
                 while (res.next()) {
                     System.out.println(String.valueOf(res.getString(1)) + "\t" +String.valueOf(res.getString(2)));
