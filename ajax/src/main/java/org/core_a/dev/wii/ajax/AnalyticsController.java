@@ -43,6 +43,9 @@ import org.apache.mahout.cf.taste.neighborhood.*;
 import org.apache.mahout.cf.taste.recommender.*;
 import org.apache.mahout.cf.taste.similarity.*;
 
+import org.apache.commons.collections.MultiMap;
+import org.apache.commons.collections.map.MultiValueMap;
+
 @Component
 @RestController
 public class AnalyticsController {
@@ -80,17 +83,38 @@ public class AnalyticsController {
         public void setMorpheme(Morpheme Morpheme) { this.Morpheme = Morpheme; }
     }
     public class Keyword {
-        private String Title;
-        private int Seq;
-        private keyword = new HashMap<String , Integer>();
+        private HashMap<String, Integer> Keyword = new HashMap<String , Integer>();
 
-        public int getOrCreateKeyword(String keyword) { 
-            if (keyword.get(keyword) {
-                return this.keyword.get(keyword);
+        public int getOrCreateKeyword(String Keyword) { 
+            if (Keyword.get(Keyword) {
+                return this.Keyword.get(Keyword);
             } else {
-                return this.keyword.put(keyword, this.keyword.size());
+                return this.Keyword.put(Keyword, this.Keyword.size());
             }
         };
+    }
+    public class RelatedUser {
+        private HashMap<String, Integer> User = new HashMap<String , Integer>();
+
+        public int getOrCreateKeyword(String User) { 
+            if (User.get(User) {
+                return this.User.get(User);
+            } else {
+                return this.User.put(User, this.User.size());
+            }
+        };
+    }
+    public class Preference {
+        private int Rows;
+        private HashMap<String, Integer> Token = new HashMap<String , Float>();
+
+        public HashMap<String, Float> getPreference() { return this.Token; };
+        public void setPreference(String keyword) {
+            int count = this.Token.get(keyword);
+            this.Token.put(keyword, count++);
+        };
+        public int getRows() { return Rows; };
+        public void setRows(int Rows) { this.Rows++; };
     }
 
     private static String driverNameHive = "org.apache.hive.jdbc.HiveDriver";
@@ -105,8 +129,7 @@ public class AnalyticsController {
 
         return gson.toJson(reports);
     }
-
-    private List<Report> getReport(String project) {
+    private List<Report> getReport(String project) {//{{{
         //FIXME
         String query = "SELECT amount, start_at, end_at, keyword FROM report WHERE project_seq = (select seq from project where name ='" + project + "')";
         List<Report> reports = new ArrayList<Report>();
@@ -149,31 +172,28 @@ public class AnalyticsController {
         }
 
         return reports;
-    }
+    }//}}}
 
     @Cacheable("articles")
     @RequestMapping("/article/{no}")
     public String article(@PathVariable String no) {
-        //simulateSlowService();
         Gson gson = new GsonBuilder().create();
-        RelatedArticle[] rows = getArticle(no);
+        List<RelatedArticle> rows = getArticle(no);
 
         return gson.toJson(rows);
     }
-
-    private void simulateSlowService() {
+    private void simulateSlowService() {//{{{
         try {
             long time = 5000L;
             Thread.sleep(time);
         } catch (InterruptedException e) {
             throw new IllegalStateException(e);
         }
-    }
-
-    public Row getArticle(String no) {
+    }//}}}
+    public Row getArticle(String no) {//{{{
         String query = "SELECT title, content, author, url, concat_ws(',', morpheme_title) as morpheme_title, concat_ws(',', morpheme_content) as morpheme_content FROM article WHERE no = '" + no + "'";
         Row row = new Row();
-        RelatedArticle[] relatedArticles = null;
+        List<RelatedArticle> relatedArticles = null;
 
         try {
             try { // hive
@@ -213,11 +233,11 @@ public class AnalyticsController {
         }
 
         return relatedArticles;
-    }
-
-    public RelatedArticle[] getRelatedArticle(Row row) {
+    }//}}}
+    public List<RelatedArticle> getRelatedArticle(Row row) {//{{{
         List<RelatedArticle> rows = new ArrayList<RelatedArticle>();
         Keyword keywords = new Keyword();
+        String summaryQuery = "":
 
         List<String> morphemes = new ArrayList<String>();
         for (Morpheme innerMorphem : row.getMorpheme()) {
@@ -225,11 +245,11 @@ public class AnalyticsController {
             morphemes.addAll(innerMorphem.getContent());
         }
 
-        for (string token : row.getTitle()) {
+        for (String token : row.getTitle()) {
             prefsForUser1.setItemID(0, keyword.getOrCreateKeyword(token));
             prefsForUser1.setValue(0, (float)(3 / morpheme.getTitle().size()));
         }
-        for (string token : row.getTitle()) {
+        for (String token : row.getTitle()) {
             prefsForUser1.setItemID(0, keyword.getOrCreateKeyword(token));
             prefsForUser1.setValue(0, (float)(1 / morpheme.getTitle().size()));
         }
@@ -281,11 +301,11 @@ public class AnalyticsController {
 
                 rows.setMorpheme(morpheme);
 
-                for (string token : morpheme.getTitle()) {
+                for (String token : morpheme.getTitle()) {
                     prefsForUser1.setItemID(i, keyword.getOrCreateKeyword(token));
                     prefsForUser1.setValue(i, (float)(3 / morpheme.getTitle().size()));
                 }
-                for (string token : morpheme.getTitle()) {
+                for (String token : morpheme.getTitle()) {
                     prefsForUser1.setItemID(i, keyword.getOrCreateKeyword(token));
                     prefsForUser1.setValue(i, (float)(1 / morpheme.getTitle().size()));
                 }
@@ -319,45 +339,150 @@ public class AnalyticsController {
         }
 
         return rows;
-    }
+    }//}}}
 
-    @Cacheable("users")
-    @RequestMapping("/user/{author}")
+    @Cacheable("usersPreference")
+    @RequestMapping("/user/{author}/preference")
     public String user(@PathVariable String author) {
-        return author;
+        Gson gson = new GsonBuilder().create();
+        Preference pref = getUserPreference(author);
+
+        return gson.toJson(rows);
     }
+    public Preference getUserPreference(String author) {//{{{
+        String query = "SELECT title, content, author, url, concat_ws(',', morpheme_title) as morpheme_title, concat_ws(',', morpheme_content) as morpheme_content FROM article WHERE author = '" + author + "'";
+
+        Row row = new Row();
+        Preference preference = new Preference();
+
+        try {
+            try { // hive
+                Class.forName(driverNameHive);
+            } catch (ClassNotFoundException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+                //System.exit(1);
+            }
+
+            Connection con = DriverManager.getConnection("jdbc:hive2://localhost:10000/default", "fishz", "");
+
+            Statement stmt = con.createStatement();
+
+            ResultSet res = null;
+            res = stmt.executeQuery(query);
+
+            Morpheme morpheme = new Morpheme();
+            List<String> morpheme_title = new ArrayList<String>();
+            List<String> morpheme_content = new ArrayList<String>();
+            while (res.next()) {
+                row.setTitle(res.getString(1));
+                row.setContent(res.getString(2));
+                row.setAuthor(res.getString(3));
+                row.setUrl(res.getString(4));
+                morpheme_title = Arrays.asList(res.getString(5).split(","));
+                morpheme_content = Arrays.asList(res.getString(6).split(","));
+                morpheme.setTitle(morpheme_title);
+                morpheme.setContent(morpheme_content);
+                row.setMorpheme(morpheme);
+
+                preference.setRows();
+                for (String token : morpheme.getTitle()) {
+                    preference.setPreference(token);
+                }
+                for (String token : morpheme.getContent()) {
+                    preference.setPreference(token);
+                }
+            }
+            // morpheme to mahout recomandation
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return preference;
+    }//}}}
+
+    @Cacheable("usersRelated")
+    @RequestMapping("/user/{author}/related")
+    public String user(@PathVariable String author) {
+        Gson gson = new GsonBuilder().create();
+        List<Preference> prefs = getRelatedUser(author);
+
+        return gson.toJson(prefs);
+    }
+    public List<RelatedUser> getRelatedUser(String author) {//{{{
+        Preference pref = getUserPreference(author);
+        List<Preference> prefArray = new ArrayList<Preference>();
+        HashMap<String, Preference> prefArrayTotal = new HashMap<String, Preference>();
+        Iterator it_root = mpPref.getPreference().entrySet().iterator();
+        while (it_root.hasNext()) {
+            Map.Entry pair = (Map.Entry)it.next();
+            prefsForUser1.setItemID(0, keyword.getOrCreateKeyword(pair.getKey()));
+            prefsForUser1.setValue(0, (float)(pair.getValue() / pref.getRows()));
+        }
+        String summaryQuery = "SELECT distinct(author) FROM article WHERE author != '" + author + "' ORDER BY author";
+
+
+        try {
+            try { // hive
+                Class.forName(driverNameHive);
+            } catch (ClassNotFoundException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+                //System.exit(1);
+            }
+            List<Preference> prefArray = getUserPreference(row_author);
+
+            Connection con = DriverManager.getConnection("jdbc:hive2://localhost:10000/default", "fishz", "");
+
+            Statement stmt = con.createStatement();
+
+            ResultSet res = null;
+            res = stmt.executeQuery(summaryQuery);
+
+            List<String> morpheme_title = new ArrayList<String>();
+            List<String> morpheme_content = new ArrayList<String>();
+            Morpheme morpheme = new Morpheme();
+
+            FastByIDMap<PreferenceArray> preferences = new FastByIDMap<PreferenceArray>();
+            PreferenceArray prefsForUser1 = new GenericUserPreferenceArray(res.getFetchSize());
+            int i = 1;
+            while (res.next()) {
+                PreferencereturnRows tmpPref = getUserPreference(res.getString(1));
+                prefArrayTotal.put(res.getString(1), tmpPref);
+
+                Iterator it = tmpPref.getPreference().entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry pair = (Map.Entry)it.next();
+                    prefsForUser1.setItemID(i, keyword.getOrCreateKeyword(pair.getKey()));
+                    prefsForUser1.setValue(i, (float)(pair.getValue() / tmpPref.getRows()));
+                }
+                preferences.put(i, prefsForUser1);
+                i++;
+            }
+
+
+            DataModel model = new GenericDataModel(preferences);
+
+            UserSimilarity similarity = new PearsonCorrelationSimilarity(model);
+            UserNeighborhood neighborhood =
+              new NearestNUserNeighborhood(10, similarity, model);
+
+            Recommender recommender = new GenericUserBasedRecommender(
+                model, neighborhood, similarity);
+
+            List<RecommendedItem> recommendations =
+                recommender.recommend(row.No, 5);
+
+            int returnKey = 0;
+            for (RecommendedItem recommendation : recommendations) {
+                prefArray.set(returnKey, prefArrayTotal.get(rerecommendations.user));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return prefArray;
+    }//}}}
 }
-
-
-class RecommenderIntro {
-
-  private RecommenderIntro() {
-  }
-
-  public static void main(String[] args) throws Exception {
-
-}
-
-class CreateGenericDataModel {
-
-  private CreateGenericDataModel() {
-  }
-
-  public static void main(String[] args) {
-    FastByIDMap<PreferenceArray> preferences =
-      new FastByIDMap<PreferenceArray>();
-    PreferenceArray prefsForUser1 = new GenericUserPreferenceArray(10);
-    prefsForUser1.setUserID(0, 1L);
-    prefsForUser1.setItemID(0, 101L);
-    prefsForUser1.setValue(0, 3.0f);
-    prefsForUser1.setItemID(1, 102L);
-    prefsForUser1.setValue(1, 4.5f);
-
-    preferences.put(1L, prefsForUser1);
-
-    DataModel model = new GenericDataModel(preferences);
-    System.out.println(model);
-  }
-
-}
-
