@@ -1,0 +1,1 @@
+insert into article partition(datestamp = "2015-11-01") select ("test01"), ("title"), ("content"), ("author"), ("no 1"), ("url"), array("a", "b"), array("c","d","e"), ("2015-11-01 01:02:03") from dummy limit 1;
